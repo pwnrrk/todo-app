@@ -1,20 +1,39 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from "react";
+import {
+  Platform,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar as StatusBarComponent,
+} from "react-native";
+import BottomBar from "./components/BottomBar";
+import ViewContainer from "./components/ViewContainer";
+import Home from "./views/Home";
+import Done from "./views/Done";
+import { StatusBar } from "expo-status-bar";
+import { Scheme } from "./utils/color";
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState("Home");
+
+  const tabs = {
+    Home,
+    Done,
+  };
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ViewContainer components={tabs} currentName={activeTab} />
+      <BottomBar setActiveTab={setActiveTab} />
+      <StatusBar style="light" />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Scheme.dark,
+    paddingTop:
+      Platform.OS === "android" ? StatusBarComponent.currentHeight : 0,
   },
 });
