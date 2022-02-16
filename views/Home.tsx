@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { StyleSheet, View, Modal } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Modal,
+  FlatList,
+  ListRenderItem,
+} from "react-native";
 import ActionButton from "../components/ActionButton";
 import Input from "../components/Input";
 import Text from "../components/Text";
@@ -17,6 +23,7 @@ export default function Home() {
       setModalOpen(false);
       setTaskToAdd("");
     };
+
     return (
       <View style={styles.modalBody}>
         <Text style={styles.modalTitle}>Add Task</Text>
@@ -47,11 +54,23 @@ export default function Home() {
     );
   };
 
-  const todoList = todos.map((todo, index) => <Text key={index}>{todo}</Text>);
+  const Todo = ({ value }: { value: string }) => {
+    return (
+      <View style={styles.item}>
+        <Text>{value}</Text>
+      </View>
+    );
+  };
+
+  const todoList: ListRenderItem<string> = ({ item }) => <Todo value={item} />;
 
   return (
     <View style={styles.container}>
-      {todoList}
+      <FlatList
+        renderItem={todoList}
+        data={todos}
+        keyExtractor={(item, index) => index.toString()}
+      />
       <Modal
         animationType="slide"
         style={{ flex: 1 }}
@@ -87,5 +106,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 18,
+  },
+  item: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: Scheme.gray,
   },
 });
