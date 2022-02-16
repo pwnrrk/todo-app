@@ -1,14 +1,19 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { StyleSheet, View, TouchableOpacity } from "react-native";
 import AntDesignIcons from "react-native-vector-icons/AntDesign";
 import { Scheme } from "../utils/color";
 
 type BottomBarProps = {
   setActiveTab: CallableFunction;
+  activeTab: string;
 };
 
 export default function BottomBar(props: BottomBarProps) {
-  const [activeTab, setActiveTab] = useState("Home");
+  const [activeTab, setActiveTab] = useState("");
+
+  useEffect(() => {
+    setActiveTab(props.activeTab);
+  }, [props.activeTab]);
 
   type TabIconProps = {
     name: string;
@@ -30,16 +35,11 @@ export default function BottomBar(props: BottomBarProps) {
     children?: ReactNode;
   };
 
-  const tabChangeHandler = (name: string) => {
-    setActiveTab(name);
-    props.setActiveTab(name);
-  };
-
   const TabItem = ({ name, children }: TabItemProps) => {
     return (
       <TouchableOpacity
         style={styles.tabItem}
-        onPress={() => tabChangeHandler(name)}
+        onPress={() => props.setActiveTab(name)}
       >
         {children}
       </TouchableOpacity>
@@ -61,9 +61,9 @@ export default function BottomBar(props: BottomBarProps) {
 const styles = StyleSheet.create({
   bottomBarContainer: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 8,
+    left: 8,
+    right: 8,
     flexDirection: "row",
     elevation: 10,
     shadowColor: "#000",
@@ -71,10 +71,11 @@ const styles = StyleSheet.create({
     shadowRadius: 1,
     shadowOpacity: 0.9,
     backgroundColor: Scheme.gray,
+    borderRadius: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: "center",
-    padding: 18,
+    paddingVertical: 14,
   },
 });

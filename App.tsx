@@ -15,15 +15,13 @@ import { Scheme } from "./utils/color";
 export default function App() {
   const [activeTab, setActiveTab] = useState("Home");
 
-  const tabs = {
-    Home,
-    Done,
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      <ViewContainer components={tabs} currentName={activeTab} />
-      <BottomBar setActiveTab={setActiveTab} />
+      <ViewContainer currentName={activeTab}>
+        <Home />
+        <Done />
+      </ViewContainer>
+      <BottomBar activeTab={activeTab} setActiveTab={setActiveTab} />
       <StatusBar style="light" />
     </SafeAreaView>
   );

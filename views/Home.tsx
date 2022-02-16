@@ -6,6 +6,7 @@ import {
   FlatList,
   ListRenderItem,
   TouchableOpacity,
+  TouchableOpacityProps,
 } from "react-native";
 import ActionButton from "../components/ActionButton";
 import Input from "../components/Input";
@@ -22,11 +23,16 @@ export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [focusedTask, setFocusedTask] = useState("");
 
-  const list = useAsyncStorage("todoList");
-  useEffect(() => {
-    list.getItem().then((result) => {
+  const listStorage = useAsyncStorage("todoList");
+
+  const getList = () => {
+    listStorage.getItem().then((result) => {
       if (result) setTodos(JSON.parse(result) as Todo[]);
     });
+  };
+
+  useEffect(() => {
+    getList();
   }, []);
 
   const AddTaskForm = () => {
@@ -37,7 +43,7 @@ export default function Home() {
         title: taskToAdd,
         done: false,
       });
-      list.setItem(JSON.stringify(todos));
+      listStorage.setItem(JSON.stringify(todos));
       setModalOpen(false);
       setTaskToAdd("");
     };
@@ -72,14 +78,17 @@ export default function Home() {
     );
   };
 
-  const ListItemButton = (props: {
-    icon: string;
-    iconColor: string;
-    title: string;
-  }) => {
+  const ListItemButton = (
+    props: {
+      icon: string;
+      iconColor: string;
+      title: string;
+    } & TouchableOpacityProps
+  ) => {
     return (
       <View>
         <TouchableOpacity
+          {...props}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -101,6 +110,18 @@ export default function Home() {
         </TouchableOpacity>
       </View>
     );
+  };
+
+  const deleteTask = (id: string) => {
+    const index = todos.findIndex((todo) => todo.id === id);
+    todos.splice(index, 1);
+    listStorage.setItem(JSON.stringify(todos), () => getList());
+  };
+
+  const doneTask = (id: string) => {
+    const task = todos.find((todo) => todo.id === id);
+    if (task) task.done = true;
+    listStorage.setItem(JSON.stringify(todos), () => getList());
   };
 
   const Todo = ({ value }: { value: Todo }) => {
@@ -127,12 +148,14 @@ export default function Home() {
               title="Done"
               icon="check"
               iconColor={Scheme.light}
+              onPress={() => doneTask(value.id)}
             />
             <ListItemButton title="Edit" icon="edit" iconColor={Scheme.light} />
             <ListItemButton
               title="Delete"
               icon="delete"
               iconColor={Scheme.red}
+              onPress={() => deleteTask(value.id)}
             />
           </View>
         )}
@@ -144,9 +167,12 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
+      <Text style={{ fontSize: 24, fontWeight: "500", marginBottom: 8 }}>
+        Tasks
+      </Text>
       <FlatList
         renderItem={todoList}
-        data={todos}
+        data={todos.filter((todo) => !todo.done)}
         keyExtractor={(todo) => todo.id}
       />
       <Modal

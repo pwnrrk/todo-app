@@ -1,9 +1,23 @@
+import {
+  FunctionComponentElement,
+  ReactNode,
+  useEffect,
+  useState,
+} from "react";
+
 type ViewContainerProps = {
-  components: { [key: string]: any };
+  children?: ReactNode;
   currentName: string;
 };
 export default function ViewContainer(props: ViewContainerProps) {
-  if (props.components[props.currentName])
-    return props.components[props.currentName]();
-  return <></>;
+  const [current, setCurrent] = useState<ReactNode>();
+
+  useEffect(() => {
+    const child = (props.children as FunctionComponentElement<any>[]).find(
+      (ch) => ch.type.name === props.currentName
+    );
+    setCurrent(child);
+  }, [props.currentName]);
+
+  return <>{current}</>;
 }
