@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
   actionButton: {
     position: "absolute",
     bottom: 80,
-    right: 5,
+    right: 18,
     width: 54,
     height: 54,
     borderRadius: 100,

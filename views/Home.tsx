@@ -1,25 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
   Modal,
   FlatList,
   ListRenderItem,
+  TouchableOpacity,
 } from "react-native";
 import ActionButton from "../components/ActionButton";
 import Input from "../components/Input";
 import Text from "../components/Text";
 import Button from "../components/Button";
 import { Scheme } from "../utils/color";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import Todo from "../interfaces/todo";
+import generateId from "../utils/generateId";
+import AntDesignIcons from "react-native-vector-icons/AntDesign";
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
-  const [todos, setTodos] = useState<string[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [focusedTask, setFocusedTask] = useState("");
+
+  const list = useAsyncStorage("todoList");
+  useEffect(() => {
+    list.getItem().then((result) => {
+      if (result) setTodos(JSON.parse(result) as Todo[]);
+    });
+  }, []);
 
   const AddTaskForm = () => {
     const [taskToAdd, setTaskToAdd] = useState("");
     const addTodo = () => {
-      todos.push(taskToAdd);
+      todos.push({
+        id: generateId(),
+        title: taskToAdd,
+        done: false,
+      });
+      list.setItem(JSON.stringify(todos));
       setModalOpen(false);
       setTaskToAdd("");
     };
@@ -54,22 +72,82 @@ export default function Home() {
     );
   };
 
-  const Todo = ({ value }: { value: string }) => {
+  const ListItemButton = (props: {
+    icon: string;
+    iconColor: string;
+    title: string;
+  }) => {
     return (
-      <View style={styles.item}>
-        <Text>{value}</Text>
+      <View>
+        <TouchableOpacity
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingVertical: 4,
+            paddingHorizontal: 8,
+            marginBottom: 4,
+            borderRadius: 8,
+            elevation: 5,
+            backgroundColor: Scheme.dark,
+          }}
+        >
+          <AntDesignIcons
+            name={props.icon}
+            size={24}
+            color={props.iconColor}
+            style={{ marginRight: 8 }}
+          />
+          <Text>{props.title}</Text>
+        </TouchableOpacity>
       </View>
     );
   };
 
-  const todoList: ListRenderItem<string> = ({ item }) => <Todo value={item} />;
+  const Todo = ({ value }: { value: Todo }) => {
+    return (
+      <View style={styles.item}>
+        <TouchableOpacity
+          style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 18 }}
+          onPress={() =>
+            setFocusedTask(focusedTask === value.id ? "" : value.id)
+          }
+        >
+          <Text>{value.title}</Text>
+        </TouchableOpacity>
+        {focusedTask === value.id && (
+          <View
+            style={{
+              paddingVertical: 8,
+              paddingLeft: 18,
+              paddingHorizontal: 18,
+              backgroundColor: Scheme.lightGray,
+            }}
+          >
+            <ListItemButton
+              title="Done"
+              icon="check"
+              iconColor={Scheme.light}
+            />
+            <ListItemButton title="Edit" icon="edit" iconColor={Scheme.light} />
+            <ListItemButton
+              title="Delete"
+              icon="delete"
+              iconColor={Scheme.red}
+            />
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const todoList: ListRenderItem<Todo> = ({ item }) => <Todo value={item} />;
 
   return (
     <View style={styles.container}>
       <FlatList
         renderItem={todoList}
         data={todos}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(todo) => todo.id}
       />
       <Modal
         animationType="slide"
@@ -108,8 +186,8 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   item: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
     backgroundColor: Scheme.gray,
+    marginBottom: 4,
+    borderRadius: 8,
   },
 });
