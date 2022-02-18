@@ -1,4 +1,4 @@
-export const Scheme = {
+export const Scheme: { [key: string]: string } = {
   dark: "#2E3440",
   gray: "#3B4252",
   lightGray: "#4C566A",

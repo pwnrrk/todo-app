@@ -6,7 +6,7 @@ import {
   FlatList,
   ListRenderItem,
   TouchableOpacity,
-  TouchableOpacityProps,
+  useColorScheme,
 } from "react-native";
 import ActionButton from "../components/ActionButton";
 import Input from "../components/Input";
@@ -17,11 +17,11 @@ import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import Todo from "../interfaces/todo";
 import generateId from "../utils/generateId";
 import AntDesignIcons from "react-native-vector-icons/AntDesign";
+import { format } from "date-fns";
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [focusedTask, setFocusedTask] = useState("");
 
   const listStorage = useAsyncStorage("todoList");
 
@@ -35,13 +35,17 @@ export default function Home() {
     getList();
   }, []);
 
+  const isEmpty = (str: string) => !str || /^\s*$/.test(str);
+
   const AddTaskForm = () => {
     const [taskToAdd, setTaskToAdd] = useState("");
     const addTodo = () => {
+      if (isEmpty(taskToAdd)) return;
       todos.push({
         id: generateId(),
         title: taskToAdd,
         done: false,
+        createdAt: new Date(),
       });
       listStorage.setItem(JSON.stringify(todos));
       setModalOpen(false);
@@ -49,66 +53,40 @@ export default function Home() {
     };
 
     return (
-      <View style={styles.modalBody}>
-        <Text style={styles.modalTitle}>Add Task</Text>
-        <Input
-          placeholder="title"
-          value={taskToAdd}
-          onChangeText={setTaskToAdd}
-          style={{ marginBottom: 18 }}
-        />
-        <View
-          style={{
-            flexDirection: "row",
-            alignSelf: "stretch",
-            justifyContent: "flex-end",
-          }}
-        >
-          <Button
-            style={{ backgroundColor: Scheme.red, marginRight: 8 }}
-            onPress={() => setModalOpen(false)}
-          >
-            <Text>Cancel</Text>
-          </Button>
-          <Button onPress={() => addTodo()}>
-            <Text>Ok</Text>
-          </Button>
-        </View>
-      </View>
-    );
-  };
-
-  const ListItemButton = (
-    props: {
-      icon: string;
-      iconColor: string;
-      title: string;
-    } & TouchableOpacityProps
-  ) => {
-    return (
-      <View>
+      <Modal
+        animationType="slide"
+        onDismiss={() => setTaskToAdd("")}
+        style={{ flex: 1 }}
+        transparent={true}
+        visible={isModalOpen}
+      >
         <TouchableOpacity
-          {...props}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 4,
-            paddingHorizontal: 8,
-            marginBottom: 4,
-            borderRadius: 8,
-            elevation: 5,
-            backgroundColor: Scheme.dark,
-          }}
-        >
-          <AntDesignIcons
-            name={props.icon}
-            size={24}
-            color={props.iconColor}
-            style={{ marginRight: 8 }}
-          />
-          <Text>{props.title}</Text>
-        </TouchableOpacity>
-      </View>
+          style={{ flex: 1, opacity: 0 }}
+          onPress={() => setModalOpen(false)}
+        ></TouchableOpacity>
+        <View style={styles.modalBody}>
+          <Text style={styles.modalTitle}>Add Task</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              marginBottom: 18,
+              alignItems: "center",
+            }}
+          >
+            <Input
+              placeholder="title"
+              value={taskToAdd}
+              onChangeText={setTaskToAdd}
+              style={{ flex: 1, marginRight: 4 }}
+              keyboardAppearance="dark"
+              onSubmitEditing={addTodo}
+            />
+            <Button onPress={addTodo}>
+              <Text>Ok</Text>
+            </Button>
+          </View>
+        </View>
+      </Modal>
     );
   };
 
@@ -120,45 +98,44 @@ export default function Home() {
 
   const doneTask = (id: string) => {
     const task = todos.find((todo) => todo.id === id);
-    if (task) task.done = true;
+    if (task) task.done = !task.done;
     listStorage.setItem(JSON.stringify(todos), () => getList());
   };
 
   const Todo = ({ value }: { value: Todo }) => {
     return (
-      <View style={styles.item}>
+      <View style={[styles.item]}>
         <TouchableOpacity
-          style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 18 }}
-          onPress={() =>
-            setFocusedTask(focusedTask === value.id ? "" : value.id)
-          }
+          style={{ marginRight: 8 }}
+          onPress={() => doneTask(value.id)}
         >
-          <Text>{value.title}</Text>
+          <AntDesignIcons
+            size={18}
+            color={Scheme.light}
+            name={value.done ? "checkcircle" : "checkcircleo"}
+          />
         </TouchableOpacity>
-        {focusedTask === value.id && (
-          <View
-            style={{
-              paddingVertical: 8,
-              paddingLeft: 18,
-              paddingHorizontal: 18,
-              backgroundColor: Scheme.lightGray,
-            }}
-          >
-            <ListItemButton
-              title="Done"
-              icon="check"
-              iconColor={Scheme.light}
-              onPress={() => doneTask(value.id)}
-            />
-            <ListItemButton title="Edit" icon="edit" iconColor={Scheme.light} />
-            <ListItemButton
-              title="Delete"
-              icon="delete"
-              iconColor={Scheme.red}
-              onPress={() => deleteTask(value.id)}
-            />
-          </View>
-        )}
+        <Text
+          style={{
+            fontSize: 18,
+            textDecorationLine: value.done ? "line-through" : "none",
+            flex: 1,
+          }}
+        >
+          {value.title}
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            color: Scheme.lightGray,
+            paddingHorizontal: 4,
+          }}
+        >
+          {`${format(new Date(value.createdAt), "d MMMM yyyy HH:mm")}`}
+        </Text>
+        <TouchableOpacity onPress={() => deleteTask(value.id)}>
+          <AntDesignIcons name="delete" color={Scheme.red} size={18} />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -172,17 +149,12 @@ export default function Home() {
       </Text>
       <FlatList
         renderItem={todoList}
-        data={todos.filter((todo) => !todo.done)}
+        data={todos.filter(
+          (todo) => new Date(todo.createdAt).getDate() == new Date().getDate()
+        )}
         keyExtractor={(todo) => todo.id}
       />
-      <Modal
-        animationType="slide"
-        style={{ flex: 1 }}
-        transparent={true}
-        visible={isModalOpen}
-      >
-        <AddTaskForm />
-      </Modal>
+      <AddTaskForm />
       <ActionButton onPress={() => setModalOpen(true)} />
     </View>
   );
@@ -213,7 +185,10 @@ const styles = StyleSheet.create({
   },
   item: {
     backgroundColor: Scheme.gray,
-    marginBottom: 4,
     borderRadius: 8,
+    marginBottom: 4,
+    padding: 8,
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

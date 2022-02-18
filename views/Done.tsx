@@ -4,7 +4,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  TouchableOpacityProps,
   FlatList,
   ListRenderItem,
 } from "react-native";
@@ -12,10 +11,10 @@ import Text from "../components/Text";
 import Todo from "../interfaces/todo";
 import { Scheme } from "../utils/color";
 import AntDesignIcons from "react-native-vector-icons/AntDesign";
+import { format } from "date-fns";
 
 export default function Done() {
   const [todoList, setTodoList] = useState<Todo[]>([]);
-  const [focusedTask, setFocusedTask] = useState("");
 
   const todoStore = useAsyncStorage("todoList");
 
@@ -29,40 +28,6 @@ export default function Done() {
     getList();
   }, []);
 
-  const ListItemButton = (
-    props: {
-      icon: string;
-      iconColor: string;
-      title: string;
-    } & TouchableOpacityProps
-  ) => {
-    return (
-      <View>
-        <TouchableOpacity
-          {...props}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 4,
-            paddingHorizontal: 8,
-            marginBottom: 4,
-            borderRadius: 8,
-            elevation: 5,
-            backgroundColor: Scheme.dark,
-          }}
-        >
-          <AntDesignIcons
-            name={props.icon}
-            size={24}
-            color={props.iconColor}
-            style={{ marginRight: 8 }}
-          />
-          <Text>{props.title}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
   const deleteTask = (id: string) => {
     const index = todoList.findIndex((todo) => todo.id === id);
     todoList.splice(index, 1);
@@ -71,32 +36,28 @@ export default function Done() {
 
   const Todo = ({ value }: { value: Todo }) => {
     return (
-      <View style={styles.item}>
-        <TouchableOpacity
-          style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 18 }}
-          onPress={() =>
-            setFocusedTask(focusedTask === value.id ? "" : value.id)
-          }
+      <View style={[styles.item]}>
+        <Text
+          style={{
+            fontSize: 18,
+            textDecorationLine: value.done ? "line-through" : "none",
+            flex: 1,
+          }}
         >
-          <Text>{value.title}</Text>
+          {value.title}
+        </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            color: Scheme.lightGray,
+            paddingHorizontal: 4,
+          }}
+        >
+          {`${format(new Date(value.createdAt), "d MMMM yyyy HH:mm")}`}
+        </Text>
+        <TouchableOpacity onPress={() => deleteTask(value.id)}>
+          <AntDesignIcons name="delete" color={Scheme.red} size={18} />
         </TouchableOpacity>
-        {focusedTask === value.id && (
-          <View
-            style={{
-              paddingVertical: 8,
-              paddingLeft: 18,
-              paddingHorizontal: 18,
-              backgroundColor: Scheme.lightGray,
-            }}
-          >
-            <ListItemButton
-              title="Delete"
-              icon="delete"
-              iconColor={Scheme.red}
-              onPress={() => deleteTask(value.id)}
-            />
-          </View>
-        )}
       </View>
     );
   };
@@ -141,8 +102,11 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   item: {
-    backgroundColor: Scheme.green,
-    marginBottom: 4,
+    backgroundColor: Scheme.gray,
     borderRadius: 8,
+    marginBottom: 4,
+    padding: 8,
+    flexDirection: "row",
+    alignItems: "center",
   },
 });
